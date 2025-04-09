@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "creator.h"
 #include "sensors.h"
+#include "motor.h"
 
 #define motor_rechts 2
 #define motor_links 4
@@ -13,6 +14,8 @@ SensorCreator* creater = SensorCreator::getInstance();
 NumericalIntegerSensor* sensor;        // Numerischer Integer-Sensor
 NumericalDoubleSensor* sensor2;        // Numerischer Double-Sensor
 NumericalDoubleSensor* sensor3;        // Numerischer Double-Sensor
+
+Motor myMotor = Motor(motor_links, motor_rechts);
 
 void setup() {
   Serial.begin(115200);  // Initialisierung der seriellen Kommunikation
@@ -31,10 +34,12 @@ void setup() {
 
 pinMode(motor_links, OUTPUT);
 pinMode(motor_rechts, OUTPUT);
+
+
 }
 
 void loop() {
-  creater->loop();  // Aufrufen der loop-Funktion des SensorCreators für interne Updates
+  /*creater->loop();  // Aufrufen der loop-Funktion des SensorCreators für interne Updates
 
   // Erhöhen des ersten Sensors um 1 bei jedem Durchlauf der loop-Funktion
   sensor->setValue(sensor->getValue() + 1);
@@ -50,9 +55,10 @@ void loop() {
   }
 
   // Setzen des dritten Sensors auf die Anzahl der Millisekunden seit Programmstart, in Sekunden umgerechnet
-  sensor3->setValue(millis() / 1000.0);
+  sensor3->setValue(millis() / 1000.0);*/
 
-  analogWrite(motor_links, 255);
-  analogWrite(motor_rechts, 100);
+  myMotor.geradeFahren(255);
+  delay(500);
+
 
 }
