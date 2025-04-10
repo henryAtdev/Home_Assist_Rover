@@ -1,9 +1,20 @@
 #include "motor.h"
 #include <Arduino.h> 
 
+Motor* Motor::instance = nullptr; 
+
 Motor::Motor(int new_pin_motor_links, int new_pin_motor_rechts){
     this->pin_motor_links = new_pin_motor_links;
     this->pin_motor_rechts = new_pin_motor_rechts;
+    pinMode(pin_motor_rechts, OUTPUT);
+    pinMode(pin_motor_links, OUTPUT);
+}
+
+Motor* Motor::getInstance(int new_pin_motor_links, int new_pin_motor_rechts){
+    if (instance == nullptr){
+        instance = new Motor(new_pin_motor_links, new_pin_motor_rechts);
+    }
+    return instance;
 }
 
 void Motor::motorAus(){

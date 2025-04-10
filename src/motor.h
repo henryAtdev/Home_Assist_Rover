@@ -7,7 +7,7 @@ class Motor{
         void winkelFahren(int winkel);         //noch nicht implementiert, evt. noch implementieren wenn sensoren da sind
         void kurveFahren(int power_links , int power_rechts);
         void motorAus();
-        Motor(int new_pin_motor_links, int new_pin_motor_rechts);
+        static Motor* getInstance(int new_pin_motor_links, int new_pin_motor_rechts);
         
     private:
         void update();
@@ -15,6 +15,8 @@ class Motor{
         int power_motor_rechts;
         int pin_motor_links;
         int pin_motor_rechts;
+        Motor(int new_pin_motor_links, int new_pin_motor_rechts);
+        static Motor* instance;
 
 };
 

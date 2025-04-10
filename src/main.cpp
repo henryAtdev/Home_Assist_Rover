@@ -15,7 +15,7 @@ NumericalIntegerSensor* sensor;        // Numerischer Integer-Sensor
 NumericalDoubleSensor* sensor2;        // Numerischer Double-Sensor
 NumericalDoubleSensor* sensor3;        // Numerischer Double-Sensor
 
-Motor myMotor = Motor(motor_links, motor_rechts);
+Motor* myMotor = Motor::getInstance(motor_links, motor_rechts);
 
 void setup() {
   Serial.begin(115200);  // Initialisierung der seriellen Kommunikation
@@ -32,9 +32,9 @@ void setup() {
   sensor3->setValue(0);   // Startwert des dritten Sensors auf 0 setzen
 
 
-pinMode(motor_links, OUTPUT);
-pinMode(motor_rechts, OUTPUT);
 
+
+  int wertAbstandssensor;
 
 }
 
@@ -57,8 +57,9 @@ void loop() {
   // Setzen des dritten Sensors auf die Anzahl der Millisekunden seit Programmstart, in Sekunden umgerechnet
   sensor3->setValue(millis() / 1000.0);*/
 
-  myMotor.geradeFahren(255);
+  myMotor->geradeFahren(255);
   delay(500);
+  //Serial.println(wertAbstandssensor)
 
 
 }
