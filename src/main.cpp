@@ -2,9 +2,13 @@
 #include "creator.h"
 #include "sensors.h"
 #include "motor.h"
+#include "Abstandssensor.h"
 
 #define motor_rechts 2
 #define motor_links 4
+#define LED_R 16 
+#define LED_B 17
+#define LED_G 25
 
 
 // Erstellen einer Instanz des SensorCreators
@@ -16,6 +20,7 @@ NumericalDoubleSensor* sensor2;        // Numerischer Double-Sensor
 NumericalDoubleSensor* sensor3;        // Numerischer Double-Sensor
 
 Motor* myMotor = Motor::getInstance(motor_links, motor_rechts);
+Abstandssensor* myAbstandssensor = new Abstandssensor(500);
 
 void setup() {
   Serial.begin(115200);  // Initialisierung der seriellen Kommunikation
@@ -30,12 +35,14 @@ void setup() {
   
   sensor3 = (NumericalDoubleSensor*) creater->createNumericSensor("Mein toller Sensor", "s", true, "mdi:gauge");
   sensor3->setValue(0);   // Startwert des dritten Sensors auf 0 setzen
-
-
-
+  pinMode(LED_R, OUTPUT);
+  pinMode(LED_G, OUTPUT);
+  pinMode(LED_B, OUTPUT);
+  
 
   int wertAbstandssensor;
 
+  
 }
 
 void loop() {
@@ -57,9 +64,19 @@ void loop() {
   // Setzen des dritten Sensors auf die Anzahl der Millisekunden seit Programmstart, in Sekunden umgerechnet
   sensor3->setValue(millis() / 1000.0);*/
 
-  myMotor->geradeFahren(255);
-  delay(500);
+  //myMotor->geradeFahren(255);
+  //delay(500);
   //Serial.println(wertAbstandssensor)
 
-
+  digitalWrite(LED_R, HIGH);
+  digitalWrite(LED_G, HIGH);
+  digitalWrite(LED_B, HIGH);
+  
+  myAbstandssensor->update();
+  
+  double Abs = myAbstandssensor->getAbstand();
+  Serial.println(Abs);
+  
+  
+  
 }

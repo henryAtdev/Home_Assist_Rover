@@ -8,6 +8,7 @@ class Motor{
         void kurveFahren(int power_links , int power_rechts);
         void motorAus();
         static Motor* getInstance(int new_pin_motor_links, int new_pin_motor_rechts);
+        bool autonomfahren();
         
     private:
         void update();
