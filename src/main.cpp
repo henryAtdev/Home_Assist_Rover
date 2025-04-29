@@ -3,6 +3,7 @@
 #include "sensors.h"
 #include "motor.h"
 #include "Abstandssensor.h"
+#include "Gyroskop.h"
 
 #define motor_rechts 2
 #define motor_links 4
@@ -21,28 +22,31 @@ NumericalDoubleSensor* sensor3;        // Numerischer Double-Sensor
 
 Motor* myMotor = Motor::getInstance(motor_links, motor_rechts);
 Abstandssensor* myAbstandssensor = new Abstandssensor(500);
+Gyroskop* myGyroskop;
 
 void setup() {
   Serial.begin(115200);  // Initialisierung der seriellen Kommunikation
-  creater->begin();      // Initialisierung des SensorCreators
+  //creater->begin();      // Initialisierung des SensorCreators
   
   // Erstellung der Sensoren mit ihren jeweiligen Parametern
-  sensor = (NumericalIntegerSensor*) creater->createNumericSensor("Test Counter", "count");
-  sensor->setValue(0);   // Startwert des ersten Sensors auf 0 setzen
+  //sensor = (NumericalIntegerSensor*) creater->createNumericSensor("Test Counter", "count");
+  //sensor->setValue(0);   // Startwert des ersten Sensors auf 0 setzen
   
-  sensor2 = (NumericalDoubleSensor*) creater->createNumericSensor("Double Counter", "m", true, "mdi:ruler");
-  sensor2->setValue(0.0001);   // Startwert des zweiten Sensors auf 0.0001 setzen
+  //sensor2 = (NumericalDoubleSensor*) creater->createNumericSensor("Double Counter", "m", true, "mdi:ruler");
+  //sensor2->setValue(0.0001);   // Startwert des zweiten Sensors auf 0.0001 setzen
   
-  sensor3 = (NumericalDoubleSensor*) creater->createNumericSensor("Mein toller Sensor", "s", true, "mdi:gauge");
-  sensor3->setValue(0);   // Startwert des dritten Sensors auf 0 setzen
+  //sensor3 = (NumericalDoubleSensor*) creater->createNumericSensor("Mein toller Sensor", "s", true, "mdi:gauge");
+  //sensor3->setValue(0);   // Startwert des dritten Sensors auf 0 setzen
+  
   pinMode(LED_R, OUTPUT);
   pinMode(LED_G, OUTPUT);
   pinMode(LED_B, OUTPUT);
-  
+  pinMode(23, INPUT); //Gyroskop Button
 
-  int wertAbstandssensor;
-
-  
+  myGyroskop = Gyroskop::getInstance();
+  myGyroskop->calibrate(1);
+  myGyroskop->setAngleFactor();
+  myGyroskop->setZeroAngle();
 }
 
 void loop() {
@@ -75,8 +79,8 @@ void loop() {
   myAbstandssensor->update();
   
   double Abs = myAbstandssensor->getAbstand();
-  Serial.println(Abs);
   
-  
+  myGyroskop->update();
+  float actGyrZ = myGyroskop->getZGyroAngle();
   
 }

@@ -1,38 +1,150 @@
 #include "Gyroskop.h"
 #include <Wire.h>
 #include<Arduino.h>
-#define GYRO_ADDR 0x68
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+
+Gyroskop* Gyroskop::instance = nullptr;
 
 Gyroskop::Gyroskop(){
-    durchlaeufe = 0;
-    /*Serial.print("Gyroskoperstellung begonnen");
-    Wire.beginTransmission(GYRO_ADDR);
-    Wire.write(0x6B); // PWR_MGMT_1 register
-    Wire.write(0); // wake up!
-    Wire.endTransmission(true);
-    durchlaeufe = 0;
-    Serial.println("Gyroskop erfolgrecih erstellt");
-    */
-}
-void Gyroskop::update(){
-    Wire.beginTransmission(GYRO_ADDR);
-    Wire.write(0x3B); // starting with register 0x3B (ACCEL_XOUT_H)
-    Wire.endTransmission(false); // the parameter indicates that the Arduino will send a restart. --> Nach dem Datenerhalt wird der Bus weiterhin offen gehalten
-    Wire.requestFrom(GYRO_ADDR, 14, true); // request a total of 7*2=14 registers
-  
-  // "Wire.read()<<8 | Wire.read();" means two registers are read and stored in the same int16_t variable
-    xBeschl = Wire.read()<<8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
-    yBeschl = Wire.read()<<8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
-    zBeschl = Wire.read()<<8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
-    Temperatur = Wire.read()<<8 | Wire.read(); // reading registers: 0x41 (TEMP_OUT_H) and 0x42 (TEMP_OUT_L)
-    xGyro = Wire.read()<<8 | Wire.read(); // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
-    yGyro = Wire.read()<<8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
-    zGyro += (Wire.read()<<8 | Wire.read())/100; // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
-    //zGyro = zGyro+35;
-    durchlaeufe+=1;
+    _gyrosensor.begin();
+    
+    // Festlegen der Genauigkeit des Sensors (von 250Deg bis 2000) --> je kleiner desto genauer
+    _gyrosensor.setGyroRange(MPU6050_RANGE_250_DEG);
 }
 
-int16_t Gyroskop::getZGyro(){
-    int16_t	 actangle = zGyro;
-    return actangle;
+Gyroskop* Gyroskop::getInstance(){
+    if(instance == nullptr){
+        instance =  new Gyroskop();
+    }
+    return instance;
 }
+
+// Misst und speichert den aktuellen Wert des Sensors. Muss um eine hohe Genauigkeit zu haben möglichst oft ausgeführt werden.
+void Gyroskop::update(){
+    sensors_event_t accelEvent;
+    sensors_event_t gyroEvent;
+    sensors_event_t tempEvent;
+    
+    _gyrosensor.getEvent(&accelEvent, &gyroEvent, &tempEvent);
+
+    _gyroX += gyroEvent.gyro.x - _offsetGyroX;
+    _gyroY += gyroEvent.gyro.y - _offsetGyroY;
+    _gyroZ += gyroEvent.gyro.z - _offsetGyroZ;
+}
+
+float Gyroskop::getXGyro(){
+    return _gyroX;
+}
+
+float Gyroskop::getYGyro(){
+    return _gyroY;
+}
+
+float Gyroskop::getZGyro(){
+    double calcAbsAngle = (_gyroZ - _angleGyroOffsetZ);
+    return calcAbsAngle;
+}
+
+float Gyroskop::getZGyroAngle(){
+    return getZGyro()/_angleCalcFactorZ;
+}
+
+/* Funktion calibrate:
+// Diese Funktion dient dazu den Offset festzustellen. Dieser wird am Ende in der Variablen _Ofset gespeichert. 
+// Der Übergabeparameter der Dauer legt fest wie lange die Kalibrierung dauer --> Je länger desto genauer.
+// Während der Kalibrierung darf der Sensor nicht bewegt werden.  
+// TODO: Bisher nur für das Gyroskop implementiert. 
+*/
+
+void Gyroskop::calibrate(double dauerInSek){
+    Serial.print("Starte Kalibrierung, Dauer = ");
+    Serial.print(dauerInSek);
+    Serial.println(" Sekunden");
+
+    _offsetGyroX = 0; 
+    _offsetGyroY = 0;
+    _offsetGyroZ = 0;
+
+    unsigned long anfangsZeitpunkt = millis();
+    unsigned long durchlaeufe = 0;
+
+    float lastX = getXGyro();
+    float lastY = getYGyro();
+    float lastZ = getZGyro();
+    
+    double totalDiffGyroX = 0;
+    double totalDiffGyroY = 0;
+    double totalDiffGyroZ = 0;
+
+    int countSec = 0;
+
+    while(anfangsZeitpunkt + dauerInSek*1000>millis()){
+        update();
+        float actX = getXGyro();
+        float actY = getYGyro();
+        float actZ = getZGyro();
+
+        float diffX = actX - lastX;
+        float diffY = actY - lastY;
+        float diffZ = actZ - lastZ;
+
+        totalDiffGyroX += diffX;
+        totalDiffGyroY += diffY;
+        totalDiffGyroZ += diffZ;
+        
+        lastX = actX;
+        lastY = actY;
+        lastZ = actZ;
+
+        ++durchlaeufe;
+        if(anfangsZeitpunkt+1000*countSec>millis()){
+            ++countSec;
+            Serial.print("Kalibriert seit ");
+            Serial.print(countSec);
+            Serial.println(" Sekunden");
+        }
+    }
+
+    _offsetGyroX = totalDiffGyroX/durchlaeufe;
+    _offsetGyroY = totalDiffGyroY/durchlaeufe;
+    _offsetGyroZ = totalDiffGyroZ/durchlaeufe;
+
+    /*Serial.println("Kalibrierung abgeschlossen");
+    Serial.print("Offset X * 1000: ");
+    Serial.print(1000*_offsetGyroX);
+    Serial.print("Offset Y * 1000: ");
+    Serial.print(1000*_offsetGyroY);
+    Serial.print("Offset Z * 1000: ");
+    Serial.print(_offsetGyroZ, 100); 
+    Serial.println();*/
+}
+
+// definiert den aktuellen Winkel als 0°
+void Gyroskop::setZeroAngle(){
+    _angleGyroOffsetZ = 0;
+
+    _angleGyroOffsetZ = getZGyro();
+}
+
+// TODO: Ziel: Sensor wird einmal im Kreis gedreht und daraus kann berechnet werden wie hoch der Faktor zwischen Winkel und ausgegebenen Werten ist.
+
+void Gyroskop::setAngleFactor(){
+
+    double zeroPoint = getZGyroAngle();
+    double zeroPoint360 = 0;
+    unsigned long actTime = millis();
+    int a = digitalRead(23);
+    Serial.println("Knopf drücken wenn Kalibrierung beendet ist.");
+    double passthrough = 0;
+    while(a == 0){
+        ++passthrough;
+        update();
+        zeroPoint360 += getZGyro(); 
+        a = digitalRead(23); 
+    }
+    zeroPoint360 = zeroPoint360/passthrough;
+    _angleCalcFactorZ = zeroPoint360/360;
+    Serial.println("Kalibrierung 360° beendet");
+}
+
