@@ -1,6 +1,8 @@
 #include "motor.h"
 #include <Arduino.h> 
 
+#include "Gyroskop.h"
+
 Motor* Motor::instance = nullptr; 
 
 Motor::Motor(int new_pin_motor_links, int new_pin_motor_rechts){
@@ -40,6 +42,40 @@ void Motor::kurveFahren(int power_links , int power_rechts){
     update();
 }
 
-void Motor::winkelFahren(int Winkel){
+void Motor::winkelFahren(int winkel, int speed, Gyroskop* myGyr){
+    double anfangsWinkel = myGyr->getZGyroAngle();
+    double updatedWinkel = anfangsWinkel;
+    if (winkel<0){
+            kurveFahren(0, speed);
+        }
+    if (winkel>0){
+            kurveFahren(speed, 0);
+        }
+    if (winkel=0){
+            kurveFahren(0, 0);
+        }
+    Serial.print("anfangswinkel: ");  
+    Serial.println(anfangsWinkel);  
+    while(winkel+anfangsWinkel > updatedWinkel){
+        updatedWinkel = myGyr->getZGyroAngle();
+        Serial.print("Während: ");  
+        Serial.println(updatedWinkel);  
+    }
+    motorAus();
+}
 
+void Motor::updateWinkelFahren(Gyroskop* myGyr){
+    float actAngle = myGyr->getZGyroAngle();
+    if(actAngle > zuFahrenderWinkel){
+        winkelFahren(0,0, myGyr);
+        zuFahrenderWinkel = 0;
+    }
+}
+
+
+void Motor::streckeFahren(int fahrzeit){
+    unsigned long startzeit = millis();
+    while(startzeit + fahrzeit <= millis()){
+        this->geradeFahren(200);
+    }
 }
