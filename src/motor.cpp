@@ -43,6 +43,7 @@ void Motor::kurveFahren(int power_links , int power_rechts){
 }
 
 void Motor::winkelFahren(int winkel, int speed, Gyroskop* myGyr){
+    myGyr->update();
     double anfangsWinkel = myGyr->getZGyroAngle();
     double updatedWinkel = anfangsWinkel;
     if (winkel<0){
@@ -57,6 +58,7 @@ void Motor::winkelFahren(int winkel, int speed, Gyroskop* myGyr){
     Serial.print("anfangswinkel: ");  
     Serial.println(anfangsWinkel);  
     while(winkel+anfangsWinkel > updatedWinkel){
+        myGyr->update();
         updatedWinkel = myGyr->getZGyroAngle();
         Serial.print("Während: ");  
         Serial.println(updatedWinkel);  
