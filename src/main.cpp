@@ -26,7 +26,7 @@ Gyroskop* myGyroskop;
 
 void setup() {
   Serial.begin(115200);  // Initialisierung der seriellen Kommunikation
-  /*creater->begin();      // Initialisierung des SensorCreators
+  creater->begin();      // Initialisierung des SensorCreators
   
   // Erstellung der Sensoren mit ihren jeweiligen Parametern
   Winkelsensor = (NumericalIntegerSensor*) creater->createNumericSensor("Winkel", "Grad", false, "mdi:gauge");
@@ -38,7 +38,7 @@ void setup() {
   //Koordinaten müssen ebenfalls hochgeladen werden 
   //sensor3 = (NumericalDoubleSensor*) creater->createNumericSensor("Mein toller Sensor", "s", true, "mdi:gauge");
   //sensor3->setValue(0);   // Startwert des dritten Sensors auf 0 setzen
-  */
+  
   
   pinMode(LED_R, OUTPUT);
   pinMode(LED_G, OUTPUT);
@@ -47,7 +47,7 @@ void setup() {
 
   myGyroskop = Gyroskop::getInstance();
   myGyroskop->calibrate(1);
-  //myGyroskop->setAngleFactor();
+  myGyroskop->setAngleFactor();
   myGyroskop->setZeroAngle();
 }
 
@@ -103,14 +103,15 @@ void loop() {
   }
   
   if (gegenstand == true && fahrZustandsaenderung == true){
-    //TODO: sonsor daten hochladen
+    Winkelsensor->setValue(actGyrZ);
+    Entfernungssensor->setValue(Abs);
     myMotor->winkelFahren(90, 255, myGyroskop);
-    //myMotor->streckeFahren(1000);
     myMotor->winkelFahren(-90, 255, myGyroskop);
     updateSensoren();
     Abs = myAbstandssensor->getAbstand();
     if (Abs <=10.0){
-      //TODO: hier ebenfalls Dateien hochladen
+      Winkelsensor->setValue(actGyrZ);
+      Entfernungssensor->setValue(Abs);
       myMotor->winkelFahren(180, 255, myGyroskop);
     }
     gegenstand = false;

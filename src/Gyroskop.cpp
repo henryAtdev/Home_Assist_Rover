@@ -146,5 +146,6 @@ void Gyroskop::setAngleFactor(){
     zeroPoint360 = zeroPoint360/passthrough;
     _angleCalcFactorZ = zeroPoint360/360;
     Serial.println("Kalibrierung 360° beendet");
+    Serial.println(_angleCalcFactorZ);
 }
 
