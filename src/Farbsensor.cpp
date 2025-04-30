@@ -3,21 +3,20 @@
 
 Farbsensor* Farbsensor::instance = nullptr;
 
-Farbsensor::Farbsensor(int farbsensorInputPin, int farbsensorOutputPin){
+Farbsensor::Farbsensor(int farbsensorInputPinLinks, int farbsensorInputPinRechts){
 
-    _ledOutputSensor = farbsensorOutputPin;
-    _ledInputSensor = farbsensorInputPin;
+    _ledInputSensorLinks = farbsensorInputPinLinks;
+    _ledInputSensorRechts = farbsensorInputPinRechts;
 
-    pinMode(_ledInputSensor, OUTPUT);
-    pinMode(_ledOutputSensor, OUTPUT);
-
-    digitalWrite(_ledOutputSensor, HIGH);
+    pinMode(_ledInputSensorLinks, INPUT);
+    pinMode(_ledInputSensorRechts, INPUT);
 }
 
 
-int Farbsensor::getActColour(){
-    int actColour = analogRead(_ledInputSensor);
-    return actColour;
+Farbsensorwerte* Farbsensor::getActColour(){
+    _farbsensorwerte._ledInputSensorLinks = analogRead(_ledInputSensorLinks);
+    _farbsensorwerte._ledInputSensorRechts = analogRead(_ledInputSensorRechts);
+    return &_farbsensorwerte;
 }
 
 Farbsensor* Farbsensor::getinstance(int farbsensorInputPin, int farbsensorOutputPin){

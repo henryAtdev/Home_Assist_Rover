@@ -4,17 +4,22 @@
 #include <inttypes.h>
 #include <Arduino.h>
 
+typedef struct{
+    int _ledInputSensorLinks;
+    int _ledInputSensorRechts;
+}Farbsensorwerte;
 
 
 class Farbsensor{
     private:
-        int _ledOutputSensor;
-        int _ledInputSensor;
+        int _ledInputSensorLinks;
+        int _ledInputSensorRechts;
         static Farbsensor* instance;
         Farbsensor(int farbsensorInputPin, int farbSensorOutputPin);
+        Farbsensorwerte _farbsensorwerte;
 
     public:        
-        int getActColour();
+        Farbsensorwerte* getActColour();
         static Farbsensor* getinstance(int farbsensorInputPin, int farbsensorOutputPin);
 };
 
