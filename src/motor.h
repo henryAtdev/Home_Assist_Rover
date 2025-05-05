@@ -5,7 +5,7 @@
 
 class Motor{
     public:
-        void geradeFahren(int geschwindigkeit);
+        
         void streckeFahren(int fahrzeit);
         void winkelFahren(int winkel, int speed, Gyroskop* myGyr);
         void kurveFahren(int power_links , int power_rechts);
@@ -13,7 +13,8 @@ class Motor{
         static Motor* getInstance(int new_pin_motor_links, int new_pin_motor_rechts);
         bool autonomfahren();
         void updateWinkelFahren(Gyroskop* myGyr);
-        
+        void geradeFahren(int speed, Gyroskop*);
+
     private:
         int modus;
         void update();
@@ -23,8 +24,9 @@ class Motor{
         int pin_motor_rechts;
         Motor(int new_pin_motor_links, int new_pin_motor_rechts);
         static Motor* instance;
-
+        void geradeFahren(int geschwindigkeit);
         int zuFahrenderWinkel;
+        
 
 };
 

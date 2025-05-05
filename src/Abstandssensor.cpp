@@ -1,9 +1,11 @@
 #include "Abstandssensor.h"
 #include <Arduino.h>
+#define ABSTANDSSENSORPIN 39
+
 
 Abstandssensor::Abstandssensor(int genauigkeit){
     _genauigkeit = genauigkeit;
-    pinMode(39, INPUT);
+    pinMode(ABSTANDSSENSORPIN, INPUT);
 }
 
 void Abstandssensor::update(){

@@ -4,6 +4,11 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 
+#define LED_R 16 
+#define LED_B 17
+#define LED_G 25
+
+portMUX_TYPE gyroMux = portMUX_INITIALIZER_UNLOCKED;
 Gyroskop* Gyroskop::instance = nullptr;
 
 Gyroskop::Gyroskop(){
@@ -27,22 +32,33 @@ void Gyroskop::update(){
     sensors_event_t tempEvent;
     
     _gyrosensor.getEvent(&accelEvent, &gyroEvent, &tempEvent);
-
+    
+    portENTER_CRITICAL(&gyroMux);
     _gyroX += gyroEvent.gyro.x - _offsetGyroX;
     _gyroY += gyroEvent.gyro.y - _offsetGyroY;
     _gyroZ += gyroEvent.gyro.z - _offsetGyroZ;
+    portEXIT_CRITICAL(&gyroMux);
+    delay(10);
 }
 
 float Gyroskop::getXGyro(){
-    return _gyroX;
+    portENTER_CRITICAL(&gyroMux);
+    float val = _gyroX;
+    portEXIT_CRITICAL(&gyroMux);
+    return val;
 }
 
 float Gyroskop::getYGyro(){
-    return _gyroY;
+    portENTER_CRITICAL(&gyroMux);
+    float val = _gyroY;
+    portEXIT_CRITICAL(&gyroMux);
+    return val;
 }
 
 float Gyroskop::getZGyro(){
-    double calcAbsAngle = (_gyroZ - _angleGyroOffsetZ);
+    portENTER_CRITICAL(&gyroMux);
+    float calcAbsAngle = (_gyroZ - _angleGyroOffsetZ);
+    portEXIT_CRITICAL(&gyroMux);
     return calcAbsAngle;
 }
 
@@ -61,6 +77,10 @@ void Gyroskop::calibrate(double dauerInSek){
     Serial.print("Starte Kalibrierung, Dauer = ");
     Serial.print(dauerInSek);
     Serial.println(" Sekunden");
+
+    analogWrite(LED_R, 255);
+    analogWrite(LED_G, 0);
+    analogWrite(LED_B, 0);
 
     _offsetGyroX = 0; 
     _offsetGyroY = 0;
@@ -110,6 +130,10 @@ void Gyroskop::calibrate(double dauerInSek){
     _offsetGyroY = totalDiffGyroY/durchlaeufe;
     _offsetGyroZ = totalDiffGyroZ/durchlaeufe;
 
+
+    analogWrite(LED_R, 0);
+    analogWrite(LED_G, 255);
+    analogWrite(LED_B, 0);
     /*Serial.println("Kalibrierung abgeschlossen");
     Serial.print("Offset X * 1000: ");
     Serial.print(1000*_offsetGyroX);
@@ -123,29 +147,44 @@ void Gyroskop::calibrate(double dauerInSek){
 // definiert den aktuellen Winkel als 0°
 void Gyroskop::setZeroAngle(){
     _angleGyroOffsetZ = 0;
-
+    portENTER_CRITICAL(&gyroMux);
     _angleGyroOffsetZ = getZGyro();
+    portEXIT_CRITICAL(&gyroMux);
 }
 
 // TODO: Ziel: Sensor wird einmal im Kreis gedreht und daraus kann berechnet werden wie hoch der Faktor zwischen Winkel und ausgegebenen Werten ist.
 
 void Gyroskop::setAngleFactor(){
 
+    analogWrite(LED_R, 0);
+    analogWrite(LED_G, 0);
+    analogWrite(LED_B, 255);
     double zeroPoint = getZGyroAngle();
     double zeroPoint360 = 0;
     unsigned long actTime = millis();
     int a = digitalRead(23);
     Serial.println("Knopf drücken wenn Kalibrierung beendet ist.");
+    
     double passthrough = 0;
+    double lastGoThrough = 0;
+    
     while(a == 0){
-        ++passthrough;
-        update();
-        zeroPoint360 += getZGyro(); 
+        
+        if(lastGoThrough == getZGyro()){    
+            ++passthrough;
+            lastGoThrough = getZGyro();
+            zeroPoint360 += lastGoThrough;
+        }     
         a = digitalRead(23); 
+        //update();
+        
     }
     zeroPoint360 = zeroPoint360/passthrough;
     _angleCalcFactorZ = zeroPoint360/360;
     Serial.println("Kalibrierung 360° beendet");
     Serial.println(_angleCalcFactorZ);
+    analogWrite(LED_R, 0);
+    analogWrite(LED_G, 255);
+    analogWrite(LED_B, 0);
 }
 

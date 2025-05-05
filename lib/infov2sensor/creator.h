@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 #include <PubSubClient.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <WiFi.h>
 #include "sensors.h"
 
@@ -44,6 +46,11 @@ private:
     char device[250] = "";  // Device identifier, potentially for a specific device
     WiFiClient wifi;  // WiFi client for network communication
     // WiFi-Client für die Netzwerkkommunikation
+
+    bool connectToHass = false;
+
+    AsyncWebServer* server = nullptr;
+    AsyncWebSocket* ws = nullptr;
 
     static SensorCreator* instance;  // Static instance of the SensorCreator (for singleton pattern)
     // Statische Instanz des SensorCreator (für das Singleton-Muster)

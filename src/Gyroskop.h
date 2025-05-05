@@ -30,7 +30,7 @@ class Gyroskop{
         double _angleGyroOffsetY = 0;
         double _angleGyroOffsetZ = 0;
 
-        double _angleCalcFactorZ = 4; //TODO: Momentan noch flasch und nicht kalibrierbar
+        double _angleCalcFactorZ = 0.25; //TODO: Momentan noch flasch und nicht kalibrierbar --> je höher die Zahl desto kleiner der Winkel.
         
         // gibt den aktuellen Wert nicht in Grad zurück sondern noch vor der Umrechnung. 
         float getXGyro();
