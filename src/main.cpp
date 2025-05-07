@@ -5,6 +5,7 @@
 #include "Abstandssensor.h"
 #include "Gyroskop.h"
 #include <string.h>
+#include "Farbsensor.h"
 
 #define motor_rechts 2
 #define motor_links 4
@@ -24,12 +25,13 @@ NumericalDoubleSensor* sensor3;        // Numerischer Double-Sensor
 Motor* myMotor = Motor::getInstance(motor_links, motor_rechts);
 Abstandssensor* myAbstandssensor = new Abstandssensor(500);
 Gyroskop* myGyroskop;
+Farbsensor *myFarbsensor; 
 
 void updateSensoren(void *parameter) {
   while (true) {
     myAbstandssensor->update();
     myGyroskop->update();     // dieselbe globale Instanz updaten
-    delay(1);
+    vTaskDelay(1);
   }
 }
   
@@ -52,8 +54,11 @@ void setup() {
   pinMode(LED_G, OUTPUT);
   pinMode(LED_B, OUTPUT);
   pinMode(23, INPUT); //Gyroskop Button
+  
 
   myGyroskop = Gyroskop::getInstance();
+  myFarbsensor = Farbsensor::getinstance(34, 36);
+
   myGyroskop->calibrate(5);
   //myGyroskop->setAngleFactor(); --> funktioniert nicht (aktuell)
   myGyroskop->setZeroAngle();
@@ -67,6 +72,18 @@ xTaskCreatePinnedToCore(
     NULL,                   // Task-Handle (optional)
     1                       // Core-ID (0 oder 1)
   );
+  
+  //Ab hier die messung der Entfernung, bei der Kalibrierungsfahrt --> TODO: geradeFahren() noch gegen gesteuertesGeradeFahren() ersetzen!!
+  bool isBlack =true;
+  unsigned long timeOnBlack;
+  unsigned long timeBevorBlack = millis();
+  myMotor->geradeFahren(200, myGyroskop);
+  while(isBlack){
+    isBlack=myFarbsensor->isBlack();
+  }
+  timeOnBlack=millis();
+  int timeOverAll= timeOnBlack - timeBevorBlack;
+  Serial.println(timeOverAll);
 }
 
 
@@ -87,6 +104,7 @@ void loop() {
     gegenstand = true;
     fahrZustandsaenderung = true; 
   }
+  
   
   // Wenn der Gegenstand im Weg ist, Zunächst um 90° nach links drehen --> Wenn auch da ein Gegenstand ist um 180° weiterdrehen
   if (gegenstand == true && fahrZustandsaenderung == true){
@@ -113,8 +131,4 @@ void loop() {
     myMotor->geradeFahren(200, myGyroskop);
     fahrZustandsaenderung = false;
   }
-  
-  Serial.print("Act angle: ");
-  Serial.println(myGyroskop->getZGyroAngle());
-
 }

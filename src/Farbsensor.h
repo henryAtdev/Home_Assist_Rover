@@ -21,6 +21,7 @@ class Farbsensor{
     public:        
         Farbsensorwerte* getActColour();
         static Farbsensor* getinstance(int farbsensorInputPin, int farbsensorOutputPin);
+        bool isBlack();
 };
 
 #endif
