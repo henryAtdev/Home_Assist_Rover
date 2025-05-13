@@ -43,12 +43,12 @@ void Motor::kurveFahren(int power_links , int power_rechts){
 }
 
 void Motor::winkelFahren(int winkel, int speed, Gyroskop* myGyr){
+    lastDirection = false;
     double anfangsWinkel = myGyr->getZGyroAngle();
     double updatedWinkel = anfangsWinkel;
     if (winkel>0){
             kurveFahren(0, speed);
             while(winkel + anfangsWinkel > updatedWinkel){
-                //myGyr->update();
                 updatedWinkel = myGyr->getZGyroAngle();
                 Serial.print("Während: ");  
                 Serial.println(updatedWinkel);  
@@ -57,13 +57,13 @@ void Motor::winkelFahren(int winkel, int speed, Gyroskop* myGyr){
     if (winkel<0){
         kurveFahren(speed, 0);
         while(anfangsWinkel + winkel < updatedWinkel){
-            //myGyr->update();
             updatedWinkel = myGyr->getZGyroAngle();
             Serial.print("Während: ");  
             Serial.println(updatedWinkel);  
         }
         }    
     motorAus();
+    
 }
 
 void Motor::updateWinkelFahren(Gyroskop* myGyr){
@@ -74,6 +74,25 @@ void Motor::updateWinkelFahren(Gyroskop* myGyr){
     }
 }
 
+void Motor::updateGeradeausFahren(Gyroskop* myGyr){
+    if(lastDirection == true){
+        Serial.println("Hier");
+        double angleError =  geradeAusfahrregelung_.startangle - myGyr->getZGyroAngle();
+        
+        // Regelung mittels PID
+        float P = geradeAusfahrregelung_.Kp * angleError;
+        double D = angleError - geradeAusfahrregelung_.letzterKorrekturfaktor;
+        
+        geradeAusfahrregelung_.fehlerSumme += angleError;
+        double I = geradeAusfahrregelung_.Ki * geradeAusfahrregelung_.fehlerSumme;
+
+        int correction = P + D +I;
+        this->power_motor_links = constrain(200 - correction, 0, 255);
+        this->power_motor_rechts = constrain(200 + correction, 0, 255);
+
+        update();
+    }
+}
 
 void Motor::streckeFahren(int fahrzeit){
     unsigned long startzeit = millis();
@@ -83,8 +102,18 @@ void Motor::streckeFahren(int fahrzeit){
 }
 
 void Motor::geradeFahren(int geschwindigkeit, Gyroskop* myGyr){
-    //myGyr->update();
     this->power_motor_links = geschwindigkeit;
     this->power_motor_rechts = geschwindigkeit;
     update();
+}
+
+void Motor::gesteuertesGeradeFahren(int geschwindigkeit, Gyroskop* myGyr){
+    if(lastDirection == false){
+        lastDirection = true;
+        geradeAusfahrregelung_.startangle = myGyr->getZGyroAngle();
+        this->power_motor_links = geschwindigkeit;
+        this->power_motor_rechts = geschwindigkeit;
+        geradeAusfahrregelung_.Anfangsgeschwindigkeit = geschwindigkeit;
+        update();
+    }
 }

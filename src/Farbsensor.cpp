@@ -44,4 +44,3 @@ bool Farbsensor::isBlack(){
         return true;
     }
 }
-

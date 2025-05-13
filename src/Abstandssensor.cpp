@@ -17,8 +17,8 @@ void Abstandssensor::update(){
     calcAbs = calcAbs/_genauigkeit;
     _abstand = 3369.2 * pow(calcAbs, -0.818);
 }
+
 int Abstandssensor::getAbstand(){
-    //Serial.println(_abstand);
     return _abstand;
 }
 

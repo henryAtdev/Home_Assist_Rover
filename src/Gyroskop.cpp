@@ -38,7 +38,6 @@ void Gyroskop::update(){
     _gyroY += gyroEvent.gyro.y - _offsetGyroY;
     _gyroZ += gyroEvent.gyro.z - _offsetGyroZ;
     portEXIT_CRITICAL(&gyroMux);
-    delay(10);
 }
 
 float Gyroskop::getXGyro(){
@@ -129,7 +128,6 @@ void Gyroskop::calibrate(double dauerInSek){
     _offsetGyroX = totalDiffGyroX/durchlaeufe;
     _offsetGyroY = totalDiffGyroY/durchlaeufe;
     _offsetGyroZ = totalDiffGyroZ/durchlaeufe;
-
 
     analogWrite(LED_R, 0);
     analogWrite(LED_G, 255);

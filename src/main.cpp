@@ -4,14 +4,17 @@
 #include "motor.h"
 #include "Abstandssensor.h"
 #include "Gyroskop.h"
-#include <string.h>
 #include "Farbsensor.h"
+#include <string.h>
 
 #define motor_rechts 2
 #define motor_links 4
 #define LED_R 16 
 #define LED_B 17
 #define LED_G 25
+
+#define updatePause 10 //des Winkelsensors
+#define updatePauseAbstandssensor 100
 
 
 // Erstellen einer Instanz des SensorCreators
@@ -25,13 +28,35 @@ NumericalDoubleSensor* sensor3;        // Numerischer Double-Sensor
 Motor* myMotor = Motor::getInstance(motor_links, motor_rechts);
 Abstandssensor* myAbstandssensor = new Abstandssensor(500);
 Gyroskop* myGyroskop;
-Farbsensor *myFarbsensor; 
+Farbsensor *myFarbsensor;
+
+long starttime = millis();
+
+void updateAbstandssensor(void *parameter){
+  TickType_t lastWakeTime = xTaskGetTickCount(); // Startzeit
+  const TickType_t frequency = updatePauseAbstandssensor / portTICK_PERIOD_MS;  // Angabe von updatePause gibt an wie oft geupdated wird
+  while (true) {
+    TickType_t now = xTaskGetTickCount();
+    if(now - lastWakeTime>frequency){
+      Serial.println("Update von Abstandssensor wird zu langsam Ausgeführt");
+    }
+    myAbstandssensor->update();                 // Abstandssensor abfragen
+    myMotor->updateGeradeausFahren(myGyroskop);
+    vTaskDelayUntil(&lastWakeTime, frequency);
+  }
+}
 
 void updateSensoren(void *parameter) {
+  TickType_t lastWakeTime = xTaskGetTickCount(); // Startzeit
+  const TickType_t frequency = updatePause / portTICK_PERIOD_MS;  // Angabe von updatePause gibt an wie oft geupdated wird
+
   while (true) {
-    myAbstandssensor->update();
-    myGyroskop->update();     // dieselbe globale Instanz updaten
-    vTaskDelay(1);
+    TickType_t now = xTaskGetTickCount();
+    if(now - lastWakeTime>frequency){
+      Serial.println("Update wird zu langsam Ausgeführt");
+    }
+    myGyroskop->update();                       // Gyro abfragen                // Abstandssensor abfragen
+    vTaskDelayUntil(&lastWakeTime, frequency);  // exakt die dauer von updatePause warten
   }
 }
   
@@ -54,11 +79,9 @@ void setup() {
   pinMode(LED_G, OUTPUT);
   pinMode(LED_B, OUTPUT);
   pinMode(23, INPUT); //Gyroskop Button
-  
 
-  myGyroskop = Gyroskop::getInstance();
   myFarbsensor = Farbsensor::getinstance(34, 36);
-
+  myGyroskop = Gyroskop::getInstance();
   myGyroskop->calibrate(5);
   //myGyroskop->setAngleFactor(); --> funktioniert nicht (aktuell)
   myGyroskop->setZeroAngle();
@@ -72,12 +95,19 @@ xTaskCreatePinnedToCore(
     NULL,                   // Task-Handle (optional)
     1                       // Core-ID (0 oder 1)
   );
-  
-  //Ab hier die messung der Entfernung, bei der Kalibrierungsfahrt --> TODO: geradeFahren() noch gegen gesteuertesGeradeFahren() ersetzen!!
+xTaskCreatePinnedToCore(
+    updateAbstandssensor,             // Task-Funktion
+    "Abstandssensor Update Task",     // Name
+    8192,                             // Stack-Größe
+    NULL,                             // Parameter
+    1,                                // Priorität
+    NULL,                             // Task-Handle (optional)
+    0                                 // Core-ID (0 oder 1)
+  );
   bool isBlack =true;
   unsigned long timeOnBlack;
   unsigned long timeBevorBlack = millis();
-  myMotor->geradeFahren(200, myGyroskop);
+  myMotor->gesteuertesGeradeFahren(200, myGyroskop);
   while(isBlack){
     isBlack=myFarbsensor->isBlack();
   }
@@ -85,8 +115,6 @@ xTaskCreatePinnedToCore(
   int timeOverAll= timeOnBlack - timeBevorBlack;
   Serial.println(timeOverAll);
 }
-
-
 
 bool gegenstand = false;
 bool fahrZustandsaenderung = true;
@@ -100,11 +128,10 @@ void loop() {
   //Fahren
   //Serial.println(Abs);
   // Gegenstand der im Weg des Rovers ist mittels des Abstandssensors feststellen
-  if (Abs<=10.0){
+  if (Abs<=12.0){
     gegenstand = true;
     fahrZustandsaenderung = true; 
   }
-  
   
   // Wenn der Gegenstand im Weg ist, Zunächst um 90° nach links drehen --> Wenn auch da ein Gegenstand ist um 180° weiterdrehen
   if (gegenstand == true && fahrZustandsaenderung == true){
@@ -127,8 +154,11 @@ void loop() {
   }
   
   if(gegenstand == false && fahrZustandsaenderung == true){
-
-    myMotor->geradeFahren(200, myGyroskop);
-    fahrZustandsaenderung = false;
+    myMotor->gesteuertesGeradeFahren(200, myGyroskop);
+    fahrZustandsaenderung = false; 
   }
+  
+  //Serial.print("Act angle: ");
+  //Serial.println(myGyroskop->getZGyroAngle());
+
 }
