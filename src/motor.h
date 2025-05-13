@@ -7,7 +7,7 @@ class Motor{
     public:
         long lasttimeUpdatedMotor = 0;    
 
-        void streckeFahren(int fahrzeit);
+        void streckeFahren(int fahrzeit, Gyroskop* myGyr);
         void winkelFahren(int winkel, int speed, Gyroskop* myGyr);
         void kurveFahren(int power_links , int power_rechts);
         void motorAus();

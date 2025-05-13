@@ -16,6 +16,18 @@
 #define updatePause 10 //des Winkelsensors
 #define updatePauseAbstandssensor 100
 
+enum Fahrtzustand{
+  gegenstandVorraus,
+  geradeaus,
+  zwischenfahrtLinks,
+  zwischenfahrtRechts,
+  isDriving
+};
+enum lastDirection{
+  links,
+  rechts
+};
+
 
 // Erstellen einer Instanz des SensorCreators
 SensorCreator* creater = SensorCreator::getInstance();
@@ -116,49 +128,70 @@ xTaskCreatePinnedToCore(
   Serial.println(timeOverAll);
 }
 
-bool gegenstand = false;
-bool fahrZustandsaenderung = true;
-
 long testtime = millis();
+Fahrtzustand actFahrzustand = geradeaus; //initialisierung des Zustandes
+lastDirection lastDrovenDirection = rechts;
+
+
+
 
 void loop() {
   double Abs = myAbstandssensor->getAbstand();
   float actGyrZ = myGyroskop->getZGyroAngle();
 
-  //Fahren
-  //Serial.println(Abs);
-  // Gegenstand der im Weg des Rovers ist mittels des Abstandssensors feststellen
-  if (Abs<=12.0){
-    gegenstand = true;
-    fahrZustandsaenderung = true; 
-  }
-  
-  // Wenn der Gegenstand im Weg ist, Zunächst um 90° nach links drehen --> Wenn auch da ein Gegenstand ist um 180° weiterdrehen
-  if (gegenstand == true && fahrZustandsaenderung == true){
-    winkelsensorHomeAss->setValue(actGyrZ);
-    entfernungssensorHomeAss->setValue(Abs);
-    
-    myMotor->winkelFahren(90, 255, myGyroskop);
- 
-    if(myAbstandssensor->getAbstand()<=10){
-      myMotor->winkelFahren(180, 255, myGyroskop);
-    }
 
-    Abs = myAbstandssensor->getAbstand();
-    if (Abs <=10.0){
-      winkelsensorHomeAss->setValue(actGyrZ);
-      entfernungssensorHomeAss->setValue(Abs);
-      myMotor->winkelFahren(180, 255, myGyroskop);
-    }
-    gegenstand = false;
+  //Zustandsautomat für den Algorithmus zum abfahren des Raumes; TODO: zurücksetzen auf geradeFahren
+  if (Abs<=12.0){
+    actFahrzustand = gegenstandVorraus;
   }
-  
-  if(gegenstand == false && fahrZustandsaenderung == true){
+  if (actFahrzustand == gegenstandVorraus && lastDrovenDirection == rechts){
+    actFahrzustand = zwischenfahrtLinks;
+    lastDrovenDirection = links;
+  }
+  else if(actFahrzustand == gegenstandVorraus && lastDrovenDirection == links){
+    actFahrzustand = zwischenfahrtRechts;
+    lastDrovenDirection = rechts;
+  }
+
+  //Auszuführende Bedingungen im jeweiligen Zustand
+  if (actFahrzustand == geradeaus){
     myMotor->gesteuertesGeradeFahren(200, myGyroskop);
-    fahrZustandsaenderung = false; 
+    actFahrzustand = isDriving;
   }
-  
-  //Serial.print("Act angle: ");
-  //Serial.println(myGyroskop->getZGyroAngle());
+  else if(actFahrzustand == zwischenfahrtLinks){
+    //SENDE DATEN
+    myMotor->winkelFahren(90, 200, myGyroskop);
+    Abs = myAbstandssensor->getAbstand();
+    if(Abs>18){
+      myMotor->streckeFahren(2000, myGyroskop);
+      myMotor->winkelFahren(-90, 200, myGyroskop);
+      Abs = myAbstandssensor->getAbstand();
+      if(Abs < 13.0){
+        myMotor->winkelFahren(-180, 200, myGyroskop);
+      }
+    }
+    else{
+      myMotor->winkelFahren(90, 200, myGyroskop);
+    }
+    actFahrzustand = geradeaus;
+  }
+  else if(actFahrzustand == zwischenfahrtRechts){
+    //SENDE DATEN
+    myMotor->winkelFahren(-90, 200, myGyroskop);
+    Abs = myAbstandssensor->getAbstand();
+    if(Abs>18){
+      myMotor->streckeFahren(2000, myGyroskop);
+      myMotor->winkelFahren(90, 200, myGyroskop);
+      Abs = myAbstandssensor->getAbstand();
+      if(Abs < 13.0){
+        myMotor->winkelFahren(180, 200, myGyroskop);
+      }
+    }
+    else{
+      myMotor->winkelFahren(-90, 200, myGyroskop);
+    }
+    actFahrzustand = geradeaus;
+  }
+
 
 }

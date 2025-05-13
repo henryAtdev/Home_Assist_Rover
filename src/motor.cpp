@@ -94,10 +94,10 @@ void Motor::updateGeradeausFahren(Gyroskop* myGyr){
     }
 }
 
-void Motor::streckeFahren(int fahrzeit){
+void Motor::streckeFahren(int fahrzeit, Gyroskop* myGyr){
     unsigned long startzeit = millis();
     while(startzeit + fahrzeit <= millis()){
-        this->geradeFahren(200);
+        this->gesteuertesGeradeFahren(200, myGyr);
     }
 }
 
