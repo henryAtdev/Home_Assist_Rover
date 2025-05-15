@@ -35,7 +35,7 @@ SensorCreator* creater = SensorCreator::getInstance();
 // Deklaration der Sensoren
 NumericalIntegerSensor* winkelsensorHomeAss;        // Numerischer Integer-Sensor
 NumericalDoubleSensor* entfernungssensorHomeAss;        // Numerischer Double-Sensor
-NumericalDoubleSensor* sensor3;        // Numerischer Double-Sensor
+NumericalIntegerSensor* zeitmessungHomeAss;        // Numerischer Integer-Sensor
 
 Motor* myMotor = Motor::getInstance(motor_links, motor_rechts);
 Abstandssensor* myAbstandssensor = new Abstandssensor(500);
@@ -82,6 +82,9 @@ void setup() {
   
   entfernungssensorHomeAss = (NumericalDoubleSensor*) creater->createNumericSensor("Abstandsensor", "cm", true, "mdi:ruler");
   entfernungssensorHomeAss->setValue(99);   // Startwert des zweiten Sensors auf 99 setzen
+
+  zeitmessungHomeAss = (NumericalIntegerSensor*) creater->createNumericSensor("Zeitmessung", "ms", false, "mdi:ruler");
+  zeitmessungHomeAss->setValue(0);   // Startwert des zweiten Sensors auf 99 setzen
   
   //Koordinaten müssen ebenfalls hochgeladen werden 
   //sensor3 = (NumericalDoubleSensor*) creater->createNumericSensor("Mein toller Sensor", "s", true, "mdi:gauge");
@@ -114,7 +117,7 @@ xTaskCreatePinnedToCore(
     NULL,                             // Parameter
     1,                                // Priorität
     NULL,                             // Task-Handle (optional)
-    0                                 // Core-ID (0 oder 1)
+    1                                 // Core-ID (0 oder 1)
   );
   bool isBlack =true;
   unsigned long timeOnBlack;
@@ -132,17 +135,42 @@ long testtime = millis();
 Fahrtzustand actFahrzustand = geradeaus; //initialisierung des Zustandes
 lastDirection lastDrovenDirection = rechts;
 
+bool zustandsAenderung = true;
 
+double Abs;
+float actGyrZ;
+unsigned long aktuelleZeit;
 
+void aktuallisiereHomeAss(){
+  Abs = myAbstandssensor->getAbstand();
+  actGyrZ = myGyroskop->getZGyroAngle();
+  aktuelleZeit = millis();
+  zeitmessungHomeAss->setValue(aktuelleZeit);
+  winkelsensorHomeAss->setValue(actGyrZ);
+  entfernungssensorHomeAss->setValue(Abs);
+
+}
 
 void loop() {
-  double Abs = myAbstandssensor->getAbstand();
-  float actGyrZ = myGyroskop->getZGyroAngle();
+  /*Simple Version der FahrLogik (Backup)
+  
+  if (Abs<=12.0){
+    myMotor->winkelFahren(90, 200, myGyroskop);
+    zustandsAenderung = true; 
+  }
+  
+  if(zustandsAenderung== true){
+    zustandsAenderung=false;
+    myMotor->gesteuertesGeradeFahren(200, myGyroskop);
+  }*/
+
+
 
 
   //Zustandsautomat für den Algorithmus zum abfahren des Raumes; TODO: zurücksetzen auf geradeFahren
-  if (Abs<=12.0){
+  if (Abs<=21){
     actFahrzustand = gegenstandVorraus;
+    aktuallisiereHomeAss();
   }
   if (actFahrzustand == gegenstandVorraus && lastDrovenDirection == rechts){
     actFahrzustand = zwischenfahrtLinks;
@@ -159,36 +187,43 @@ void loop() {
     actFahrzustand = isDriving;
   }
   else if(actFahrzustand == zwischenfahrtLinks){
-    //SENDE DATEN
     myMotor->winkelFahren(90, 200, myGyroskop);
+    aktuallisiereHomeAss();
     Abs = myAbstandssensor->getAbstand();
-    if(Abs>18){
-      myMotor->streckeFahren(2000, myGyroskop);
+    if(Abs>25){
+      myMotor->streckeFahren(4000, myGyroskop);
       myMotor->winkelFahren(-90, 200, myGyroskop);
+      aktuallisiereHomeAss();
       Abs = myAbstandssensor->getAbstand();
-      if(Abs < 13.0){
+      if(Abs < 21.0){
         myMotor->winkelFahren(-180, 200, myGyroskop);
+        aktuallisiereHomeAss();
       }
     }
     else{
       myMotor->winkelFahren(90, 200, myGyroskop);
+      aktuallisiereHomeAss();
     }
     actFahrzustand = geradeaus;
   }
   else if(actFahrzustand == zwischenfahrtRechts){
     //SENDE DATEN
     myMotor->winkelFahren(-90, 200, myGyroskop);
+    aktuallisiereHomeAss();
     Abs = myAbstandssensor->getAbstand();
-    if(Abs>18){
-      myMotor->streckeFahren(2000, myGyroskop);
+    if(Abs>25){
+      myMotor->streckeFahren(4000, myGyroskop);
       myMotor->winkelFahren(90, 200, myGyroskop);
+      aktuallisiereHomeAss();
       Abs = myAbstandssensor->getAbstand();
-      if(Abs < 13.0){
+      if(Abs < 21.0){
         myMotor->winkelFahren(180, 200, myGyroskop);
+        aktuallisiereHomeAss();
       }
     }
     else{
       myMotor->winkelFahren(-90, 200, myGyroskop);
+      aktuallisiereHomeAss();
     }
     actFahrzustand = geradeaus;
   }

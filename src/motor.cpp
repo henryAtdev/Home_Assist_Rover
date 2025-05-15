@@ -50,16 +50,16 @@ void Motor::winkelFahren(int winkel, int speed, Gyroskop* myGyr){
             kurveFahren(0, speed);
             while(winkel + anfangsWinkel > updatedWinkel){
                 updatedWinkel = myGyr->getZGyroAngle();
-                Serial.print("Während: ");  
-                Serial.println(updatedWinkel);  
+                //Serial.print("Während: ");  
+                //Serial.println(updatedWinkel);  
             }
         }
     if (winkel<0){
         kurveFahren(speed, 0);
         while(anfangsWinkel + winkel < updatedWinkel){
             updatedWinkel = myGyr->getZGyroAngle();
-            Serial.print("Während: ");  
-            Serial.println(updatedWinkel);  
+            //Serial.print("Während: ");  
+            //Serial.println(updatedWinkel);  
         }
         }    
     motorAus();
@@ -76,7 +76,6 @@ void Motor::updateWinkelFahren(Gyroskop* myGyr){
 
 void Motor::updateGeradeausFahren(Gyroskop* myGyr){
     if(lastDirection == true){
-        Serial.println("Hier");
         double angleError =  geradeAusfahrregelung_.startangle - myGyr->getZGyroAngle();
         
         // Regelung mittels PID
@@ -86,7 +85,7 @@ void Motor::updateGeradeausFahren(Gyroskop* myGyr){
         geradeAusfahrregelung_.fehlerSumme += angleError;
         double I = geradeAusfahrregelung_.Ki * geradeAusfahrregelung_.fehlerSumme;
 
-        int correction = P + D +I;
+        int correction = P + D + I;
         this->power_motor_links = constrain(200 - correction, 0, 255);
         this->power_motor_rechts = constrain(200 + correction, 0, 255);
 
@@ -115,5 +114,6 @@ void Motor::gesteuertesGeradeFahren(int geschwindigkeit, Gyroskop* myGyr){
         this->power_motor_rechts = geschwindigkeit;
         geradeAusfahrregelung_.Anfangsgeschwindigkeit = geschwindigkeit;
         update();
+        Serial.println("gest. Gerade fahren");
     }
 }

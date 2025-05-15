@@ -33,8 +33,8 @@ class Motor{
             double Kp = 0.1;
             double Ki = 0.1;
             double Kd = 0.01;
-            double fehlerSumme;
-            double startangle;
+            double fehlerSumme = 0;
+            double startangle = 0;
             double KorrekturFaktor = 2;
             int Anfangsgeschwindigkeit = 0;
             int letzterKorrekturfaktor = 0;
