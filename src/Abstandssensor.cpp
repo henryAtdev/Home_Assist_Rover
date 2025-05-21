@@ -16,15 +16,15 @@ void Abstandssensor::update(){
         calcAbs+=actVal;
     }
     calcAbs = calcAbs/_genauigkeit;
-    portENTER_CRITICAL(&absMux);
+
     _abstand = 3369.2 * pow(calcAbs, -0.818);
-    portEXIT_CRITICAL(&absMux);
+
 }
 
 int Abstandssensor::getAbstand(){
-    portENTER_CRITICAL(&absMux);
+    
     double achtAbstand = _abstand;
-    portEXIT_CRITICAL(&absMux);
+    
     return _abstand;
 }
 

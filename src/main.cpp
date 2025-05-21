@@ -123,12 +123,12 @@ xTaskCreatePinnedToCore(
   unsigned long timeOnBlack;
   unsigned long timeBevorBlack = millis();
   myMotor->gesteuertesGeradeFahren(200, myGyroskop);
-  while(isBlack){
-    isBlack=myFarbsensor->isBlack();
-  }
-  timeOnBlack=millis();
-  int timeOverAll= timeOnBlack - timeBevorBlack;
-  Serial.println(timeOverAll);
+  //while(isBlack){
+  //  isBlack=myFarbsensor->isBlack();
+  //}
+  //timeOnBlack=millis();
+  //int timeOverAll= timeOnBlack - timeBevorBlack;
+  //Serial.println(timeOverAll);
 }
 
 long testtime = millis();
@@ -166,7 +166,7 @@ void loop() {
 
 
 
-
+  Abs = myAbstandssensor->getAbstand();
   //Zustandsautomat für den Algorithmus zum abfahren des Raumes; TODO: zurücksetzen auf geradeFahren
   if (Abs<=21){
     actFahrzustand = gegenstandVorraus;
